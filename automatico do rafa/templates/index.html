@@ -1,0 +1,93 @@
+{% extends 'layout.html' %}
+{% block body %}
+  <h3 class='text-center text-muted mb-3'>TK Blaze Space - Admin</h3>
+  <div class="table-responsive" style="height: 85%">
+    <table class='table table-bordered table-striped'>
+      <thead class="thead-dark">
+        <th>ID </th>
+        <th>Telegram </th>
+        <th>E-mail </th>
+        <th>Bot </th>
+        <th>Pagamento </th>
+        <th>Criado em </th>
+        <th>Expira em </th>
+        <th>Token </th>
+        <th>Deletar </th>
+      </thead>
+      <tbody>
+        {% for row in datas %}
+          <tr>
+            <td style="padding-top: 15px;font-size: 13px;">{{loop.index}}</td>
+            <td style="padding-top: 15px;font-size: 13px;">{{row.user.user_bot}}</td>
+            <td style="padding-top: 15px;font-size: 13px;">{{row.user.email}}</td>
+            <td style="padding-top: 15px;font-size: 13px;">{{"Executando" if row.user.is_active else "Parado"}}</td>
+            <td style="padding-top: 15px;font-size: 13px;">{{"Pago" if row.user.payment_status == "PAID" else "Pendente"}}</td>
+            <td style="padding-top: 15px;font-size: 13px;">{{row.user.created_at if row.user.created_at else ""}}</td>
+            <td style="padding-top: 15px;font-size: 13px;">{{row.user.expire_in if row.user.expire_in else ""}}</td>
+            {%if row.user.payment_status != "PAID"%}
+              <td><a class='{{ "btn btn-danger btn-sm" if row.user.payment_status != "PAID" else "btn btn-success btn-sm" }}' data-toggle="modal" data-target="#TestModal" onclick="select_user('{{ row.user.id }}')">{{"desativado" if row.user.payment_status != "PAID" else "Ativado"}}</a></td>
+            {%else%}
+              <td><a href='{{url_for("change_status_user",uid=row.user.id)}}' class='{{ "btn btn-danger btn-sm" if row.user.payment_status != "PAID" else "btn btn-success btn-sm" }}' onclick='return confirm("Limitar o acesso desse cliente???")'>{{"desativado" if row.user.payment_status != "PAID" else "Ativado"}}</a></td>
+            {%endif%}
+            <td><a href='{{url_for("delete_user",uid=row.user.id)}}' class='btn btn-danger btn-sm' onclick='return confirm("Deletar cliente???")'>Deletar</a></td>
+          </tr>
+        {%endfor%}
+      </tbody>
+    </table>
+    <div class="modal fade" id="TestModal" role="dialog" style="display:none;">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <!--<button type="button" class="close" data-dismiss="modal">X</button>-->
+            <h4 class="modal-title">Validade do token</h4>
+          </div>
+          <div class="modal-body">
+            <p>Defina a data de validade do token deste usuário!!!</p>
+            <form>
+              <div class="form-group">
+                <label for="expirate-date" class="col-form-label">Validade em dias: </label>
+                <input type="text" class="form-control" id="expirate-date">
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-success" onclick="set_expire_date()">Confirmar</button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">Fechar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js" integrity="sha512-odNmoc1XJy5x1TMVMdC7EMs3IVdItLPlCeL5vSUPN2llYKMJ2eByTTAIiiuqLg+GdNr9hF6z81p27DArRFKT7A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script>
+    let selected_user = null;
+
+    function select_user (uid) {
+      selected_user = uid;
+    }
+
+    function set_expire_date () {
+      let days = document.getElementById("expirate-date").value;
+      if (days === "") {
+        days = 3;
+      }
+      axios.get('/change_status_user', {
+          params: {
+            uid: selected_user,
+            days: days,
+          }
+        })
+        .then(function (response) {
+          console.log(response);
+          $('#TestModal').modal('hide');
+          window.location.href = "./index";
+        })
+        .catch(function (error) {
+          console.log(error);
+        })
+        .then(function () {
+          // always executed
+        });
+    }
+  </script>
+{% endblock %}
